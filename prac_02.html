@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Simple ER Diagram Builder Prototype</title>
+<style>
+  body { font-family: sans-serif; }
+  #canvas {
+    border: 1px solid #ccc;
+    width: 800px; height: 500px;
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .entity, .attribute {
+    position: absolute;
+    border: 2px solid #007bff;
+    border-radius: 4px;
+    padding: 8px;
+    background: #cce5ff;
+    cursor: move;
+    user-select: none;
+    text-align: center;
+    min-width: 100px;
+  }
+  .entity { border-radius: 6px; background:#b8daff; }
+  .attribute { border-radius: 50%; width: 70px; height: 70px; line-height: 70px; background: #d4edda; }
+  #schema {
+    white-space: pre-wrap;
+    background: #f0f0f0;
+    padding: 10px;
+    max-width: 800px;
+    font-family: monospace;
+  }
+  button {
+    margin-right: 10px;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+  <h2>Simple ER Diagram Builder Prototype</h2>
+  <button onclick="addEntity()">Add Entity</button>
+  <button onclick="addAttribute()">Add Attribute</button>
+  <button onclick="generateSchema()">Generate Schema</button>
+
+  <div id="canvas"></div>
+  <h3>Generated Relational Schema</h3>
+  <pre id="schema"></pre>
+
+<script>
+// Keep track of entities and attributes
+const canvas = document.getElementById('canvas');
+let elements = [];
+let idCounter = 0;
+
+// Drag and drop functionality
+function dragElement(el) {
+  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  el.onmousedown = dragMouseDown;
+
+  function dragMouseDown(e) {
+    e = e || window.event;
+    e.preventDefault();
+    pos3 = e.clientX; pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    document.onmousemove = elementDrag;
+  }
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY;
+    pos3 = e.clientX; pos4 = e.clientY;
+    el.style.top = (el.offsetTop - pos2) + "px";
+    el.style.left = (el.offsetLeft - pos1) + "px";
+  }
+  function closeDragElement() {
+    document.onmouseup = null;
+    document.onmousemove = null;
+  }
+}
+
+function addEntity() {
+  const id = 'entity-' + idCounter++;
+  const div = document.createElement('div');
+  div.className = 'entity';
+  div.contentEditable = true;
+  div.textContent = 'Entity' + idCounter;
+  div.style.top = '50px';
+  div.style.left = '50px';
+  div.id = id;
+  canvas.appendChild(div);
+  dragElement(div);
+  elements.push({type: 'entity', id: id, name: div.textContent});
+  // Update name on editing
+  div.oninput = () => {
+    const el = elements.find(e => e.id === id);
+    if(el) el.name = div.textContent.trim();
+  };
+}
+
+function addAttribute() {
+  const id = 'attribute-' + idCounter++;
+  const div = document.createElement('div');
+  div.className = 'attribute';
+  div.contentEditable = true;
+  div.textContent = 'Attribute' + idCounter;
+  div.style.top = '200px';
+  div.style.left = '50px';
+  div.id = id;
+  canvas.appendChild(div);
+  dragElement(div);
+  elements.push({type: 'attribute', id: id, name: div.textContent});
+  div.oninput = () => {
+    const el = elements.find(e => e.id === id);
+    if(el) el.name = div.textContent.trim();
+  };
+}
+
+// Generates a very simple relational schema text output
+function generateSchema() {
+  let schemaText = '';
+  const entities = elements.filter(e => e.type === 'entity');
+  const attributes = elements.filter(e => e.type === 'attribute');
+
+  entities.forEach(entity => {
+    schemaText += `Table ${entity.name} (\n  PK id,\n`;
+    // For demo: just attach all attributes to all entities (no relations yet)
+    attributes.forEach(attr => {
+      schemaText += `  ${attr.name} varchar(255),\n`;
+    });
+    schemaText = schemaText.trim().slice(0, -1); // remove last comma
+    schemaText += '\n);\n\n';
+  });
+
+  document.getElementById('schema').textContent = schemaText || 'No entities defined.';
+}
+
+</script>
+</body>
+</html>
